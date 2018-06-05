@@ -169,6 +169,17 @@ bool Movie::LoadFromMemory(const void* data, const size_t dataLength, const std:
             mMovieData = data;
             mVersion = static_cast<float>(major_version) + (static_cast<float>(minor_version) * 0.1f);
 
+            // Hacky way to find compositions ;)
+            ae_visit_movie_layer_data(mMovieData, [](const aeMovieCompositionData* _compositionData, const aeMovieLayerData* _layer, ae_voidptr_t _ud)->ae_bool_t {
+                if (AE_TRUE == ae_is_movie_composition_data_master(_compositionData)) {
+                    Movie* _this = reinterpret_cast<Movie*>(_ud);
+                    if (_this) {
+                        _this->AddCompositionData(_compositionData);
+                    }
+                }
+                return AE_TRUE;
+            }, this);
+
             result = true;
         }
     }
@@ -186,6 +197,8 @@ void Movie::Close() {
         ae_delete_movie_instance(mMovieInstance);
         mMovieInstance = nullptr;
     }
+
+    mCompositions.clear();
 }
 
 float Movie::GetVersion() const {
@@ -209,6 +222,27 @@ Composition* Movie::OpenComposition(const std::string& name) {
 void Movie::CloseComposition(Composition* composition) {
     if (composition) {
         delete composition;
+    }
+}
+
+Composition* Movie::OpenDefaultComposition() {
+    Composition* result = nullptr;
+
+    if (!mCompositions.empty()) {
+        const aeMovieCompositionData* compData = mCompositions.front();
+        if (compData) {
+            result = new Composition();
+            result->Create(mMovieData, compData);
+        }
+    }
+
+    return result;
+}
+
+void Movie::AddCompositionData(const aeMovieCompositionData* compositionData) {
+    // Hacky way to find compositions ;)
+    if (std::find(mCompositions.begin(), mCompositions.end(), compositionData) == mCompositions.end()) {
+        mCompositions.push_back(compositionData);
     }
 }
 

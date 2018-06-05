@@ -112,13 +112,13 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)libs\libmovie\include\;$(ProjectDir)libs\glad\include\;$(ProjectDir)libs\glfw\include\;$(ProjectDir)libs\imgui\;$(ProjectDir)libs\stb\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)libs\libmovie\include\;$(ProjectDir)libs\glad\include\;$(ProjectDir)libs\glfw\include\;$(ProjectDir)libs\imgui\;$(ProjectDir)libs\stb\;$(ProjectDir)libs\nativefiledialog\src\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)libs\glfw\bin\src\Debug\;$(ProjectDir)libs\libmovie\bin\Debug\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>opengl32.lib;glfw3.lib;movie.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs\glfw\bin\src\Debug\;$(ProjectDir)libs\libmovie\bin\Debug\;$(ProjectDir)libs\nativefiledialog\build\lib\Debug\x64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opengl32.lib;glfw3.lib;movie.lib;nfd_d.lib;comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

@@ -5,6 +5,8 @@ extern "C" {
 #include <movie/movie.h>
 }
 
+#include <nfd.h>
+
 #include <iostream>
 #include <cstdarg>
 #include <ctime>
@@ -18,8 +20,10 @@ extern "C" {
 #include "imgui_impl_glfw_gl3_glad.h"
 
 struct UI {
-    bool showNormal;
-    bool showWireframe;
+    bool        showNormal;
+    bool        showWireframe;
+    bool        shouldExit;
+    std::string fileToOpen;
 };
 
 
@@ -33,10 +37,47 @@ inline float GetCurrentTimeSeconds() {
 
 void DoUI(UI& ui, Composition* composition) {
     const ImGuiWindowFlags kPanelFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;// | ImGuiWindowFlags_NoCollapse;
+
     const float panelWidth = 200.0f;
     const float panelHeight = 200.0f;
 
-    ImGui::SetNextWindowPos(ImVec2(static_cast<float>(kWindowWidth) - panelWidth, 0.0f));
+    ImGui::BeginMainMenuBar();
+    {
+        if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("Open...")) {
+                nfdchar_t* outPath = nullptr;
+                if (NFD_OKAY == NFD_OpenDialog("aem", nullptr, &outPath)) {
+                    ui.fileToOpen = outPath;
+                    free(outPath);
+                }
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Exit")) {
+                ui.shouldExit = true;
+            }
+
+            ImGui::EndMenu();
+        }
+    }
+    ImGui::EndMainMenuBar();
+
+    float nextY = 20.0f;
+
+
+    ImGui::SetNextWindowPos(ImVec2(static_cast<float>(kWindowWidth) - panelWidth, nextY));
+    ImGui::SetNextWindowSize(ImVec2(panelWidth, 0.0f));
+    ImGui::Begin("Viewer:", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+    {
+        ImGui::Text("%.1f FPS (%.3f ms)", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
+        ImGui::Checkbox("Draw normal", &ui.showNormal);
+        ImGui::Checkbox("Draw wireframe", &ui.showWireframe);
+    }
+    nextY += ImGui::GetWindowHeight();
+    ImGui::End();
+
+    ImGui::SetNextWindowPos(ImVec2(static_cast<float>(kWindowWidth) - panelWidth, nextY));
     ImGui::SetNextWindowSize(ImVec2(panelWidth, panelHeight));
     ImGui::Begin("Movie info", nullptr, kPanelFlags);
     {
@@ -68,7 +109,7 @@ void DoUI(UI& ui, Composition* composition) {
             composition->SetLoop(loopComposition);
         }
     }
-    const float nextY = ImGui::GetWindowHeight();
+    nextY += ImGui::GetWindowHeight();
     ImGui::End();
 
     ImGui::SetNextWindowPos(ImVec2(static_cast<float>(kWindowWidth) - panelWidth, nextY));
@@ -113,14 +154,6 @@ void DoUI(UI& ui, Composition* composition) {
             ImGui::NewLine();
         }
     }
-    ImGui::End();
-
-    ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-    ImGui::SetNextWindowSize(ImVec2(150.0f, 0.0f));
-    ImGui::Begin("Viewer:", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-    ImGui::Text("%.1f FPS (%.3f ms)", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
-    ImGui::Checkbox("Draw normal", &ui.showNormal);
-    ImGui::Checkbox("Draw wireframe", &ui.showWireframe);
     ImGui::End();
 }
 
@@ -178,6 +211,7 @@ int main(int argc, char** argv) {
     UI ui;
     ui.showNormal = true;
     ui.showWireframe = false;
+    ui.shouldExit = false;
 
     // Setup Dear ImGui binding
     IMGUI_CHECKVERSION();
@@ -207,7 +241,7 @@ int main(int argc, char** argv) {
             ResourcesManager::Instance().Initialize();
 
             float timeLast = GetCurrentTimeSeconds();
-            while (!glfwWindowShouldClose(window)) {
+            while (!glfwWindowShouldClose(window) && !ui.shouldExit) {
                 glfwPollEvents();
 
                 glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -240,6 +274,28 @@ int main(int argc, char** argv) {
                 ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 
                 glfwSwapBuffers(window);
+
+                // we want to open the file
+                if (!ui.fileToOpen.empty()) {
+                    movie.CloseComposition(composition);
+
+                    if (movie.LoadFromFile(ui.fileToOpen, licenseHash)) {
+                        composition = movie.OpenDefaultComposition();
+                        if (composition) {
+                            MyLog << "Composition \"" << composition->GetName() << "\" loaded successfully" << MyEndl;
+                            MyLog << " Duration: " << composition->GetDuration() << " seconds" << MyEndl;
+                            composition->SetLoop(toLoop);
+                            composition->Play();
+                        } else {
+                            MyLog << "Failed to open the default composition" << MyEndl;
+                        }
+                    } else {
+                        MyLog << "Failed to load the movie" << MyEndl;
+                        break;
+                    }
+
+                    ui.fileToOpen.clear();
+                }
             }
 
             movie.CloseComposition(composition);
