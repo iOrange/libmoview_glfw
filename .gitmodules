@@ -4,3 +4,6 @@
 [submodule "libs/libmovie"]
 	path = libs/libmovie
 	url = https://github.com/irov/libmovie.git
+[submodule "libs/glfw"]
+	path = libs/glfw
+	url = https://github.com/glfw/glfw.git
