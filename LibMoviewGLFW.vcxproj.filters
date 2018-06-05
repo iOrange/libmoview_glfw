@@ -1,0 +1,134 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="libs">
+      <UniqueIdentifier>{cf3c2f5c-6664-4dbd-b79b-ae26242289f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs\libmovie">
+      <UniqueIdentifier>{beddf284-4506-4108-b083-453a39d2a933}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs\libmovie\include">
+      <UniqueIdentifier>{f50e7373-a663-4b13-9e93-c3f318297fc9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs\libmovie\include\movie">
+      <UniqueIdentifier>{09c76b40-779a-43e4-a727-94be69a935d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs\glfw">
+      <UniqueIdentifier>{c204b624-76b3-47e3-9b56-9e6d802bdb0b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs\glfw\include">
+      <UniqueIdentifier>{4bea8cfe-17fa-41d9-a31e-c0134fdb85f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs\glfw\include\GLFW">
+      <UniqueIdentifier>{b2dc84a6-d34d-49a4-a320-76523f263b73}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="libs\stb">
+      <UniqueIdentifier>{514ca8c4-05f8-4bb0-88b8-fd9802b801df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs\glad">
+      <UniqueIdentifier>{f3ee296e-62ac-4a9b-8614-15f6e93d37a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs\glad\src">
+      <UniqueIdentifier>{30e62fc9-9b6a-458e-9998-847c326df691}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs\imgui">
+      <UniqueIdentifier>{c5a2b26d-f0e0-40c3-93ef-293f98689233}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="libs\libmovie\include\movie\movie.h">
+      <Filter>libs\libmovie\include\movie</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\libmovie\include\movie\movie.hpp">
+      <Filter>libs\libmovie\include\movie</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\libmovie\include\movie\movie_config.h">
+      <Filter>libs\libmovie\include\movie</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\libmovie\include\movie\movie_data.h">
+      <Filter>libs\libmovie\include\movie</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\libmovie\include\movie\movie_instance.h">
+      <Filter>libs\libmovie\include\movie</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\libmovie\include\movie\movie_node.h">
+      <Filter>libs\libmovie\include\movie</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\libmovie\include\movie\movie_resource.h">
+      <Filter>libs\libmovie\include\movie</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\libmovie\include\movie\movie_skeleton.h">
+      <Filter>libs\libmovie\include\movie</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\libmovie\include\movie\movie_type.h">
+      <Filter>libs\libmovie\include\movie</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\libmovie\include\movie\movie_typedef.h">
+      <Filter>libs\libmovie\include\movie</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\glfw\include\GLFW\glfw3.h">
+      <Filter>libs\glfw\include\GLFW</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\glfw\include\GLFW\glfw3native.h">
+      <Filter>libs\glfw\include\GLFW</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\stb\stb_image.h">
+      <Filter>libs\stb</Filter>
+    </ClInclude>
+    <ClInclude Include="src\movie_resmgr.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\singleton.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\movie.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\composition.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\imgui_impl_glfw_gl3_glad.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\simplemath.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\movie_resmgr.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\glad\src\glad.c">
+      <Filter>libs\glad\src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\movie.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\composition.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\imgui\imgui.cpp">
+      <Filter>libs\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_impl_glfw_gl3_glad.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="libs\imgui\imgui_draw.cpp">
+      <Filter>libs\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="src\viewer_glfw.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
