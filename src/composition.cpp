@@ -654,13 +654,13 @@ void Composition::FlushDraw() {
         if (drawSolid) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             glUseProgram(mShader);
-            glDrawElements(GL_TRIANGLES, mNumIndices, GL_UNSIGNED_SHORT, nullptr);
+            glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mNumIndices), GL_UNSIGNED_SHORT, nullptr);
         }
 
         if (drawWire) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             glUseProgram(mWireShader);
-            glDrawElements(GL_TRIANGLES, mNumIndices, GL_UNSIGNED_SHORT, nullptr);
+            glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mNumIndices), GL_UNSIGNED_SHORT, nullptr);
         }
 
         mVerticesData = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
