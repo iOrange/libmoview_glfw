@@ -271,6 +271,7 @@ bool Movie::OnProvideResource(const aeMovieResource* _resource, void** _rd, void
                 ResourceImage* image = ResourcesManager::Instance().GetImageRes(ae_image->name);
 
                 image->textureRes = ResourcesManager::Instance().GetTextureRes(texturePath);
+                image->premultAlpha = (ae_image->is_premultiplied == AE_TRUE);
 
                 *_rd = reinterpret_cast<ae_voidptr_t>(image);
             }

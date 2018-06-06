@@ -49,6 +49,7 @@ void main() {                                          \n\
 static const char* sFragmentShader = "#version 330     \n\
 uniform sampler2D uTextureRGB;                         \n\
 uniform sampler2D uTextureA;                           \n\
+uniform bool uIsPremultAlpha;                          \n\
 in vec2 v2fUV0;                                        \n\
 in vec2 v2fUV1;                                        \n\
 in vec4 v2fColor;                                      \n\
@@ -57,7 +58,11 @@ void main() {                                          \n\
     vec4 texColor = texture(uTextureRGB, v2fUV0);      \n\
     vec4 texAlpha = texture(uTextureA, v2fUV1);        \n\
     oColor = texColor * v2fColor;                      \n\
-    oColor.a *= texAlpha.a;                            \n\
+    if (uIsPremultAlpha) {                             \n\
+        oColor *= texAlpha.a * v2fColor.a;             \n\
+    } else {                                           \n\
+        oColor.a *= texAlpha.a;                        \n\
+    }                                                  \n\
 }                                                      \n";
 
 static const char* sWireVertexShader = "#version 330   \n\
@@ -104,6 +109,7 @@ Composition::Composition()
     , mIB(0)
     , mCurrentTextureRGB(0)
     , mCurrentTextureA(0)
+    , mCurrentBlendMode(BlendMode::Alpha)
     , mNumVertices(0)
     , mNumIndices(0)
     , mVerticesData(nullptr)
@@ -499,6 +505,11 @@ void Composition::CreateDrawingData() {
     MakeOrtho2DMat(left, right, top, bottom, zNear, zFar, projOrtho);
 
     glUseProgram(mShader);
+    mIsPremultAlphaUniform = glGetUniformLocation(mShader, "uIsPremultAlpha");
+    if (mIsPremultAlphaUniform >= 0) {
+        glUniform1i(mIsPremultAlphaUniform, GL_FALSE);
+    }
+
     GLint mvpLoc = glGetUniformLocation(mShader, "uWVP");
     if (mvpLoc >= 0) {
         glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, projOrtho);
@@ -600,12 +611,22 @@ void Composition::DrawMesh(const aeMovieRenderMesh* mesh, const ResourceImage* i
         newTextureA = imageA->textureRes->texture;
     }
 
-    if (mesh->vertexCount > verticesLeft || mesh->indexCount > indicesLeft || newTextureRGB != mCurrentTextureRGB || newTextureA != mCurrentTextureA) {
+    BlendMode newBlendMode = BlendMode::Alpha;
+    if (imageRGB && imageRGB->premultAlpha) {
+        newBlendMode = BlendMode::PremultAlpha;
+    }
+
+    if (mesh->vertexCount > verticesLeft    ||
+        mesh->indexCount > indicesLeft      ||
+        newTextureRGB != mCurrentTextureRGB ||
+        newTextureA != mCurrentTextureA     ||
+        newBlendMode != mCurrentBlendMode) {
         this->FlushDraw();
     }
 
     mCurrentTextureRGB = newTextureRGB;
     mCurrentTextureA = newTextureA;
+    mCurrentBlendMode = newBlendMode;
 
     DrawVertex* vertices = reinterpret_cast<DrawVertex*>(mVerticesData) + mNumVertices;
     uint16_t* indices = reinterpret_cast<uint16_t*>(mIndicesData) + mNumIndices;
@@ -643,6 +664,23 @@ void Composition::FlushDraw() {
         const bool drawSolid = (mDrawMode == DrawMode::Solid || mDrawMode == DrawMode::SolidWithWireOverlay);
         const bool drawWire = (mDrawMode == DrawMode::Wireframe || mDrawMode == DrawMode::SolidWithWireOverlay);
 
+        GLint isPremultAlpha = GL_FALSE;
+
+        switch (mCurrentBlendMode) {
+            case BlendMode::Alpha: {
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            } break;
+
+            case BlendMode::PremultAlpha: {
+                glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+                isPremultAlpha = GL_TRUE;
+            } break;
+
+            case BlendMode::Add: {
+                glBlendFunc(GL_ONE, GL_ONE);
+            } break;
+        }
+
         glUnmapBuffer(GL_ARRAY_BUFFER);
         glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 
@@ -654,6 +692,7 @@ void Composition::FlushDraw() {
         if (drawSolid) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             glUseProgram(mShader);
+            glUniform1i(mIsPremultAlphaUniform, isPremultAlpha);
             glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mNumIndices), GL_UNSIGNED_SHORT, nullptr);
         }
 

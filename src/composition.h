@@ -30,6 +30,12 @@ public:
         SolidWithWireOverlay
     };
 
+    enum class BlendMode : size_t {
+        Alpha,
+        PremultAlpha,
+        Add
+    };
+
 protected:
     Composition();
 
@@ -88,11 +94,13 @@ private:
     // rendering stuff
     GLuint                                      mShader;
     GLuint                                      mWireShader;
+    GLint                                       mIsPremultAlphaUniform;
     GLuint                                      mVAO;
     GLuint                                      mVB;
     GLuint                                      mIB;
     GLuint                                      mCurrentTextureRGB;
     GLuint                                      mCurrentTextureA;
+    BlendMode                                   mCurrentBlendMode;
     size_t                                      mNumVertices;
     size_t                                      mNumIndices;
     void*                                       mVerticesData;

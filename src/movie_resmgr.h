@@ -43,9 +43,11 @@ struct ResourceTexture : public Resource {
 
 struct ResourceImage : public Resource {
     ResourceTexture*    textureRes;
+    bool                premultAlpha;
 
     ResourceImage()
         : textureRes(nullptr)
+        , premultAlpha(true)
     {
         type = Resource::Image;
     }
