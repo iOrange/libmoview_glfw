@@ -616,6 +616,10 @@ void Composition::DrawMesh(const aeMovieRenderMesh* mesh, const ResourceImage* i
         newBlendMode = BlendMode::PremultAlpha;
     }
 
+    if (mesh->blend_mode == AE_MOVIE_BLEND_ADD) {
+        newBlendMode = BlendMode::Add;
+    }
+
     if (mesh->vertexCount > verticesLeft    ||
         mesh->indexCount > indicesLeft      ||
         newTextureRGB != mCurrentTextureRGB ||
