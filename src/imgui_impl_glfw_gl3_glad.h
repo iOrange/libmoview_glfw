@@ -15,6 +15,7 @@
 // The 'glsl_version' initialization parameter defaults to "#version 150" if NULL.
 // Only override if your GL version doesn't handle this GLSL version. Keep NULL if unsure!
 #include <imgui.h>
+#include <imgui_internal.h>
 
 struct GLFWwindow;
 

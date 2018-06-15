@@ -59,9 +59,10 @@ void main() {                                          \n\
     vec4 texAlpha = texture(uTextureA, v2fUV1);        \n\
     oColor = texColor * v2fColor;                      \n\
     if (uIsPremultAlpha) {                             \n\
-        oColor *= texAlpha.a * v2fColor.a;             \n\
-    } else {                                           \n\
+        oColor.rgb *= texAlpha.a * v2fColor.a;         \n\
         oColor.a *= texAlpha.a;                        \n\
+    } else {                                           \n\
+        oColor.a *= texAlpha.a * v2fColor.a;           \n\
     }                                                  \n\
 }                                                      \n";
 
@@ -109,7 +110,8 @@ Composition::Composition()
     , mIB(0)
     , mCurrentTextureRGB(0)
     , mCurrentTextureA(0)
-    , mCurrentBlendMode(BlendMode::Alpha)
+    , mCurrentBlendMode(BlendMode::Normal)
+    , mPremultipliedAlpha(false)
     , mNumVertices(0)
     , mNumIndices(0)
     , mVerticesData(nullptr)
@@ -152,6 +154,12 @@ float Composition::GetCurrentPlayTime() const {
     }
 }
 
+void Composition::SetCurrentPlayTime(const float time) const {
+    if (mComposition) {
+        ae_set_movie_composition_time(mComposition, time);
+    }
+}
+
 bool Composition::IsPlaying() const {
     if (mComposition) {
         return ae_is_play_movie_composition(mComposition) == AE_TRUE;
@@ -162,7 +170,7 @@ bool Composition::IsPlaying() const {
 
 void Composition::Play(const float startTime) {
     if (mComposition) {
-        if(ae_is_pause_movie_composition(mComposition)) {
+        if (this->IsPaused()) {
             ae_resume_movie_composition(mComposition);
         } else if (!this->IsPlaying()) {
             ae_play_movie_composition(mComposition, startTime);
@@ -173,6 +181,14 @@ void Composition::Play(const float startTime) {
 void Composition::Pause() {
     if (mComposition) {
         ae_pause_movie_composition(mComposition);
+    }
+}
+
+bool Composition::IsPaused() const {
+    if (mComposition) {
+        return ae_is_pause_movie_composition(mComposition) == AE_TRUE;
+    } else {
+        return false;
     }
 }
 
@@ -611,19 +627,14 @@ void Composition::DrawMesh(const aeMovieRenderMesh* mesh, const ResourceImage* i
         newTextureA = imageA->textureRes->texture;
     }
 
-    BlendMode newBlendMode = BlendMode::Alpha;
-    if (imageRGB && imageRGB->premultAlpha) {
-        newBlendMode = BlendMode::PremultAlpha;
-    }
+    const bool isPremultAlpha = (imageRGB && imageRGB->premultAlpha);
+    const BlendMode newBlendMode = (mesh->blend_mode == AE_MOVIE_BLEND_ADD) ? BlendMode::Add : BlendMode::Normal;
 
-    if (mesh->blend_mode == AE_MOVIE_BLEND_ADD) {
-        newBlendMode = BlendMode::Add;
-    }
-
-    if (mesh->vertexCount > verticesLeft    ||
-        mesh->indexCount > indicesLeft      ||
-        newTextureRGB != mCurrentTextureRGB ||
-        newTextureA != mCurrentTextureA     ||
+    if (mesh->vertexCount > verticesLeft      ||
+        mesh->indexCount > indicesLeft        ||
+        newTextureRGB != mCurrentTextureRGB   ||
+        newTextureA != mCurrentTextureA       ||
+        isPremultAlpha != mPremultipliedAlpha ||
         newBlendMode != mCurrentBlendMode) {
         this->FlushDraw();
     }
@@ -631,6 +642,7 @@ void Composition::DrawMesh(const aeMovieRenderMesh* mesh, const ResourceImage* i
     mCurrentTextureRGB = newTextureRGB;
     mCurrentTextureA = newTextureA;
     mCurrentBlendMode = newBlendMode;
+    mPremultipliedAlpha = isPremultAlpha;
 
     DrawVertex* vertices = reinterpret_cast<DrawVertex*>(mVerticesData) + mNumVertices;
     uint16_t* indices = reinterpret_cast<uint16_t*>(mIndicesData) + mNumIndices;
@@ -671,17 +683,20 @@ void Composition::FlushDraw() {
         GLint isPremultAlpha = GL_FALSE;
 
         switch (mCurrentBlendMode) {
-            case BlendMode::Alpha: {
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            } break;
-
-            case BlendMode::PremultAlpha: {
-                glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-                isPremultAlpha = GL_TRUE;
+            case BlendMode::Normal: {
+                if (mPremultipliedAlpha) {
+                    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+                } else {
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                }
             } break;
 
             case BlendMode::Add: {
-                glBlendFunc(GL_ONE, GL_ONE);
+                if (mPremultipliedAlpha) {
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+                } else {
+                    glBlendFunc(GL_ONE, GL_ONE);
+                }
             } break;
         }
 
@@ -696,7 +711,7 @@ void Composition::FlushDraw() {
         if (drawSolid) {
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             glUseProgram(mShader);
-            glUniform1i(mIsPremultAlphaUniform, isPremultAlpha);
+            glUniform1i(mIsPremultAlphaUniform, mPremultipliedAlpha ? GL_TRUE : GL_FALSE);
             glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mNumIndices), GL_UNSIGNED_SHORT, nullptr);
         }
 

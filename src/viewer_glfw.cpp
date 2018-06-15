@@ -23,7 +23,17 @@ struct UI {
     bool        showNormal;
     bool        showWireframe;
     bool        shouldExit;
+    float       manualPlayPos;
+
+    UI(): showNormal(true)
+        , showWireframe(false)
+        , shouldExit(false)
+        , manualPlayPos(0.0f)
+    {
+    }
 };
+
+UI gUI;
 
 
 static const size_t kWindowWidth = 1280;
@@ -36,9 +46,46 @@ inline float GetCurrentTimeSeconds() {
 
 std::string     gMovieFilePath;
 std::string     gLicenseHash;
+std::string     gCompositionName;
 bool            gToLoopPlay = false;
 Movie           gMovie;
 Composition*    gComposition = nullptr;
+
+
+const char*     gSessionFileName = "session.txt";
+
+void SaveSession() {
+    FILE* f = my_fopen(gSessionFileName, "wt");
+    if (f) {
+        fprintf(f, "%s\n", gMovieFilePath.c_str());
+        fprintf(f, "%s\n", gCompositionName.c_str());
+        fprintf(f, "%s\n", gToLoopPlay ? "yes" : "no");
+        fprintf(f, "%s\n", gLicenseHash.c_str());
+        fclose(f);
+    }
+}
+
+void LoadSession() {
+    FILE* f = my_fopen(gSessionFileName, "rt");
+    if (f) {
+        char line[1025] = { 0 };
+
+        if (fgets(line, 1024, f)) {
+            gMovieFilePath.assign(line, strlen(line) - 1);
+        }
+        if (fgets(line, 1024, f)) {
+            gCompositionName.assign(line, strlen(line) - 1);
+        }
+        if (fgets(line, 1024, f)) {
+            gToLoopPlay = (line[0] == 'y');
+        }
+        if (fgets(line, 1024, f)) {
+            gLicenseHash.assign(line, strlen(line) - 1);
+        }
+
+        fclose(f);
+    }
+}
 
 void ShutdownMovie() {
     if (gComposition) {
@@ -50,21 +97,24 @@ void ShutdownMovie() {
     ResourcesManager::Instance().Shutdown();
 }
 
-bool ReloadMovie(const std::string& filePath, const std::string& compositionName) {
+bool ReloadMovie() {
     bool result = false;
 
     ShutdownMovie();
-    gMovieFilePath = filePath;
 
     ResourcesManager::Instance().Initialize();
 
     if (gMovie.LoadFromFile(gMovieFilePath, gLicenseHash)) {
-        gComposition = compositionName.empty() ? gMovie.OpenDefaultComposition() : gMovie.OpenComposition(compositionName);
+        gComposition = gCompositionName.empty() ? gMovie.OpenDefaultComposition() : gMovie.OpenComposition(gCompositionName);
         if (gComposition) {
-            MyLog << "Composition \"" << gComposition->GetName() << "\" loaded successfully" << MyEndl;
+            gCompositionName = gComposition->GetName();
+            MyLog << "Composition \"" << gCompositionName << "\" loaded successfully" << MyEndl;
             MyLog << " Duration: " << gComposition->GetDuration() << " seconds" << MyEndl;
             gComposition->SetLoop(gToLoopPlay);
             gComposition->Play();
+
+            SaveSession();
+            gUI.manualPlayPos = 0.0f;
 
             result = true;
         } else {
@@ -77,18 +127,19 @@ bool ReloadMovie(const std::string& filePath, const std::string& compositionName
     return result;
 }
 
-void DoUI(UI& ui) {
+
+void DoUI() {
     const ImGuiWindowFlags kPanelFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;// | ImGuiWindowFlags_NoCollapse;
 
-    const float panelWidth = 200.0f;
+    const float rightPanelWidth = 200.0f;
+    const float leftPanelWidth = 300.0f;
     const float panelHeight = 200.0f;
     float nextY = 0.0f;
 
-    std::string compositionToPlay;
     bool openNewMovie = false;
 
     ImGui::SetNextWindowPos(ImVec2(0.0f, nextY));
-    ImGui::SetNextWindowSize(ImVec2(panelWidth, 0.0f));
+    ImGui::SetNextWindowSize(ImVec2(leftPanelWidth, 0.0f));
     ImGui::Begin("Movie:", nullptr, kPanelFlags);
     {
         char moviePath[1024] = { 0 };
@@ -101,14 +152,18 @@ void DoUI(UI& ui) {
         if (!gLicenseHash.empty()) {
             memcpy(licenseHash, gLicenseHash.c_str(), gLicenseHash.length());
         }
-        if (!compositionToPlay.empty()) {
-            memcpy(compositionName, compositionToPlay.c_str(), compositionToPlay.length());
+        if (!gCompositionName.empty()) {
+            memcpy(compositionName, gCompositionName.c_str(), gCompositionName.length());
         }
 
         ImGui::Text("Movie file path:");
-        if (ImGui::InputText("##FilePath", moviePath, sizeof(moviePath) - 1)) {
-            gMovieFilePath = moviePath;
+        ImGui::PushItemWidth(leftPanelWidth - 50.0f);
+        {
+            if (ImGui::InputText("##FilePath", moviePath, sizeof(moviePath) - 1)) {
+                gMovieFilePath = moviePath;
+            }
         }
+        ImGui::PopItemWidth();
         ImGui::SameLine();
         if (ImGui::Button("...")) {
             nfdchar_t* outPath = nullptr;
@@ -119,14 +174,22 @@ void DoUI(UI& ui) {
         }
 
         ImGui::Text("Licence hash:");
-        if (ImGui::InputText("##LicenseHash", licenseHash, sizeof(licenseHash) - 1)) {
-            gLicenseHash = licenseHash;
+        ImGui::PushItemWidth(leftPanelWidth - 50.0f);
+        {
+            if (ImGui::InputText("##LicenseHash", licenseHash, sizeof(licenseHash) - 1)) {
+                gLicenseHash = licenseHash;
+            }
         }
+        ImGui::PopItemWidth();
 
         ImGui::Text("Composition name:");
-        if (ImGui::InputText("##CompositionName", compositionName, sizeof(compositionName) - 1)) {
-            compositionToPlay = compositionName;
+        ImGui::PushItemWidth(leftPanelWidth - 50.0f);
+        {
+            if (ImGui::InputText("##CompositionName", compositionName, sizeof(compositionName) - 1)) {
+                gCompositionName = compositionName;
+            }
         }
+        ImGui::PopItemWidth();
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Leave it empty to play default composition");
         }
@@ -139,23 +202,23 @@ void DoUI(UI& ui) {
     ImGui::End();
 
     if (openNewMovie && !gMovieFilePath.empty() && !gLicenseHash.empty()) {
-        ReloadMovie(gMovieFilePath, compositionToPlay);
+        ReloadMovie();
     }
 
-    ImGui::SetNextWindowPos(ImVec2(static_cast<float>(kWindowWidth) - panelWidth, nextY));
-    ImGui::SetNextWindowSize(ImVec2(panelWidth, 0.0f));
+    ImGui::SetNextWindowPos(ImVec2(static_cast<float>(kWindowWidth) - rightPanelWidth, nextY));
+    ImGui::SetNextWindowSize(ImVec2(rightPanelWidth, 0.0f));
     ImGui::Begin("Viewer:", nullptr, kPanelFlags);
     {
         ImGui::Text("%.1f FPS (%.3f ms)", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
-        ImGui::Checkbox("Draw normal", &ui.showNormal);
-        ImGui::Checkbox("Draw wireframe", &ui.showWireframe);
+        ImGui::Checkbox("Draw normal", &gUI.showNormal);
+        ImGui::Checkbox("Draw wireframe", &gUI.showWireframe);
     }
     nextY += ImGui::GetWindowHeight();
     ImGui::End();
 
     if (gComposition) {
-        ImGui::SetNextWindowPos(ImVec2(static_cast<float>(kWindowWidth) - panelWidth, nextY));
-        ImGui::SetNextWindowSize(ImVec2(panelWidth, panelHeight));
+        ImGui::SetNextWindowPos(ImVec2(static_cast<float>(kWindowWidth) - rightPanelWidth, nextY));
+        ImGui::SetNextWindowSize(ImVec2(rightPanelWidth, panelHeight));
         ImGui::Begin("Movie info:", nullptr, kPanelFlags);
         {
             const float duration = gComposition->GetDuration();
@@ -168,16 +231,31 @@ void DoUI(UI& ui) {
 
             ImGui::ProgressBar(playPos);
 
+            if (!gComposition->IsPaused()) {
+                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+            }
+            ImGui::Text("Manual position:");
+            ImGui::SliderFloat("##ManualPos", &gUI.manualPlayPos, 0.0f, gComposition->GetDuration());
+            if (!gComposition->IsPaused()) {
+                ImGui::PopItemFlag();
+                ImGui::PopStyleVar();
+            } else {
+                gComposition->SetCurrentPlayTime(gUI.manualPlayPos);
+            }
+
             if (ImGui::Button("Play")) {
-                gComposition->Play();
+                gComposition->Play(gUI.manualPlayPos);
             }
             ImGui::SameLine();
             if (ImGui::Button("Pause")) {
                 gComposition->Pause();
+                gUI.manualPlayPos = gComposition->GetCurrentPlayTime();
             }
             ImGui::SameLine();
             if (ImGui::Button("Stop")) {
                 gComposition->Stop();
+                gUI.manualPlayPos = 0.0f;
             }
 
             bool loopComposition = gComposition->IsLooped();
@@ -191,8 +269,8 @@ void DoUI(UI& ui) {
 
         const size_t numSubCompositions = gComposition->GetNumSubCompositions();
         if (numSubCompositions) {
-            ImGui::SetNextWindowPos(ImVec2(static_cast<float>(kWindowWidth) - panelWidth, nextY));
-            ImGui::SetNextWindowSize(ImVec2(panelWidth, panelHeight));
+            ImGui::SetNextWindowPos(ImVec2(static_cast<float>(kWindowWidth) - rightPanelWidth, nextY));
+            ImGui::SetNextWindowSize(ImVec2(rightPanelWidth, panelHeight));
             ImGui::Begin("Sub compositions:", nullptr, kPanelFlags);
             {
                 for (size_t i = 0; i < numSubCompositions; ++i) {
@@ -240,17 +318,18 @@ void DoUI(UI& ui) {
 int main(int argc, char** argv) {
     std::string compositionName;
     std::string isLooped;
-    std::string licenseHash;
 
     if(argc == 5) {
-        gMovieFilePath  = argv[1];
-        compositionName = argv[2];
-        isLooped        = argv[3];
-        gLicenseHash    = argv[4];
+        gMovieFilePath   = argv[1];
+        gCompositionName = argv[2];
+        isLooped         = argv[3];
+        gLicenseHash     = argv[4];
 
         std::transform(isLooped.begin(), isLooped.end(), isLooped.begin(), [](char c) { return static_cast<char>(std::tolower(c)); });
 
         gToLoopPlay = (isLooped == "true" || isLooped == "1" || isLooped == "yes");
+    } else {
+        LoadSession();
     }
 
     if (!glfwInit()) {
@@ -282,21 +361,17 @@ int main(int argc, char** argv) {
     glfwSetKeyCallback(window, ImGui_ImplGlfw_KeyCallback);
     glfwSetMouseButtonCallback(window, ImGui_ImplGlfw_MouseButtonCallback);
 
-    UI ui;
-    ui.showNormal = true;
-    ui.showWireframe = false;
-    ui.shouldExit = false;
-
     // Setup Dear ImGui binding
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImGui::GetIO().IniFilename = nullptr; // disable "imgui.ini"
     ImGui_ImplGlfwGL3_Init(window, false);
     ImGui::StyleColorsClassic();
 
     ResourcesManager::Instance().Initialize();
 
-    if (!gMovieFilePath.empty()) {
-        ReloadMovie(gMovieFilePath, compositionName);
+    if (!gMovieFilePath.empty() && !gLicenseHash.empty()) {
+        ReloadMovie();
     }
 
     glViewport(0, 0, static_cast<GLint>(kWindowWidth), static_cast<GLint>(kWindowHeight));
@@ -306,7 +381,7 @@ int main(int argc, char** argv) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     float timeLast = GetCurrentTimeSeconds();
-    while (!glfwWindowShouldClose(window) && !ui.shouldExit) {
+    while (!glfwWindowShouldClose(window) && !gUI.shouldExit) {
         glfwPollEvents();
 
         glClear(GL_COLOR_BUFFER_BIT);
@@ -322,11 +397,11 @@ int main(int argc, char** argv) {
                 gComposition->Update(dt);
             }
 
-            if (ui.showNormal || ui.showWireframe) {
+            if (gUI.showNormal || gUI.showWireframe) {
                 Composition::DrawMode drawMode;
-                if (ui.showNormal && ui.showWireframe) {
+                if (gUI.showNormal && gUI.showWireframe) {
                     drawMode = Composition::DrawMode::SolidWithWireOverlay;
-                } else if (ui.showWireframe) {
+                } else if (gUI.showWireframe) {
                     drawMode = Composition::DrawMode::Wireframe;
                 } else {
                     drawMode = Composition::DrawMode::Solid;
@@ -336,7 +411,7 @@ int main(int argc, char** argv) {
             }
         }
 
-        DoUI(ui);
+        DoUI();
 
         ImGui::Render();
         ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());

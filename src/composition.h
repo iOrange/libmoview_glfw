@@ -31,8 +31,7 @@ public:
     };
 
     enum class BlendMode : size_t {
-        Alpha,
-        PremultAlpha,
+        Normal,
         Add
     };
 
@@ -45,10 +44,12 @@ public:
     std::string GetName() const;
     float       GetDuration() const;
     float       GetCurrentPlayTime() const;
+    void        SetCurrentPlayTime(const float time) const;
 
     bool        IsPlaying() const;
     void        Play(const float startTime = 0.0f);
     void        Pause();
+    bool        IsPaused() const;
     void        Stop();
     void        SetLoop(const bool toLoop);
     bool        IsLooped() const;
@@ -101,6 +102,7 @@ private:
     GLuint                                      mCurrentTextureRGB;
     GLuint                                      mCurrentTextureA;
     BlendMode                                   mCurrentBlendMode;
+    bool                                        mPremultipliedAlpha;
     size_t                                      mNumVertices;
     size_t                                      mNumIndices;
     void*                                       mVerticesData;
