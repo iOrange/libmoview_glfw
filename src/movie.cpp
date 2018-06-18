@@ -225,6 +225,52 @@ void Movie::CloseComposition(Composition* composition) {
     }
 }
 
+size_t Movie::GetMainCompositionsCount() const {
+    return mCompositions.size();
+}
+
+std::string Movie::GetMainCompositionNameByIdx(const size_t idx) const {
+    std::string result;
+
+    if (idx >= 0 && idx < mCompositions.size()) {
+        const aeMovieCompositionData* compData = mCompositions[idx];
+        result = ae_get_movie_composition_data_name(compData);
+    }
+
+    return result;
+}
+
+Composition* Movie::OpenMainCompositionByIdx(const size_t idx) const {
+    Composition* result = nullptr;
+
+    if (idx >= 0 && idx < mCompositions.size()) {
+        const aeMovieCompositionData* compData = mCompositions[idx];
+        if (compData) {
+            result = new Composition();
+            result->Create(mMovieData, compData);
+        }
+    }
+
+    return result;
+}
+
+//#TODO_SK: find better way to search for the composition !!!
+size_t Movie::FindMainCompositionIdx(Composition* composition) const {
+    size_t idx = ~0u;
+
+    if (composition) {
+        std::string compName = composition->GetName();
+        for (size_t i = 0, end = this->GetMainCompositionsCount(); i < end; ++i) {
+            if (this->GetMainCompositionNameByIdx(i) == compName) {
+                idx = i;
+                break;
+            }
+        }
+    }
+
+    return idx;
+}
+
 Composition* Movie::OpenDefaultComposition() {
     Composition* result = nullptr;
 

@@ -50,6 +50,7 @@ std::string     gCompositionName;
 bool            gToLoopPlay = false;
 Movie           gMovie;
 Composition*    gComposition = nullptr;
+size_t          gLastCompositionIdx = 0;
 
 
 const char*     gSessionFileName = "session.txt";
@@ -115,6 +116,8 @@ bool ReloadMovie() {
 
             SaveSession();
             gUI.manualPlayPos = 0.0f;
+
+            gLastCompositionIdx = gMovie.FindMainCompositionIdx(gComposition);
 
             result = true;
         } else {
@@ -199,12 +202,43 @@ void DoUI() {
             openNewMovie = true;
         }
     }
+    nextY += ImGui::GetWindowHeight();
     ImGui::End();
 
     if (openNewMovie && !gMovieFilePath.empty() && !gLicenseHash.empty()) {
         ReloadMovie();
     }
 
+    // If we have more then 1 main composition - let's allow user to choose one to play
+    const size_t numMainCompositions = gMovie.GetMainCompositionsCount();
+    if (numMainCompositions > 1) {
+        ImGui::SetNextWindowPos(ImVec2(0.0f, nextY));
+        ImGui::SetNextWindowSize(ImVec2(leftPanelWidth, panelHeight));
+        ImGui::Begin("Main compositions:", nullptr, kPanelFlags);
+        {
+            int option = static_cast<int>(gLastCompositionIdx);
+
+            for (size_t i = 0; i < numMainCompositions; ++i) {
+                std::string guiID = std::to_string(i);
+
+                std::string fullLabel = gMovie.GetMainCompositionNameByIdx(i) + "##" + guiID;
+                ImGui::RadioButton(fullLabel.c_str(), &option, static_cast<int>(i));
+            }
+
+            if (static_cast<size_t>(option) != gLastCompositionIdx) {
+                gLastCompositionIdx = static_cast<size_t>(option);
+                gMovie.CloseComposition(gComposition);
+                gComposition = gMovie.OpenMainCompositionByIdx(gLastCompositionIdx);
+                gComposition->SetLoop(gToLoopPlay);
+                gComposition->Play();
+                gUI.manualPlayPos = 0.0f;
+            }
+        }
+        ImGui::End();
+    }
+
+
+    nextY = 0.0f;
     ImGui::SetNextWindowPos(ImVec2(static_cast<float>(kWindowWidth) - rightPanelWidth, nextY));
     ImGui::SetNextWindowSize(ImVec2(rightPanelWidth, 0.0f));
     ImGui::Begin("Viewer:", nullptr, kPanelFlags);

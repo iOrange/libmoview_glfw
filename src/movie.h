@@ -22,6 +22,12 @@ public:
     Composition*    OpenComposition(const std::string& name);
     void            CloseComposition(Composition* composition);
 
+    size_t          GetMainCompositionsCount() const;
+    std::string     GetMainCompositionNameByIdx(const size_t idx) const;
+    Composition*    OpenMainCompositionByIdx(const size_t idx) const;
+
+    size_t          FindMainCompositionIdx(Composition* composition) const;
+
     Composition*    OpenDefaultComposition();
 
 private:
