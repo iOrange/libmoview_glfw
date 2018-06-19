@@ -265,18 +265,10 @@ void DoUI() {
 
             ImGui::ProgressBar(playPos);
 
-            if (!gComposition->IsPaused()) {
-                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-            }
+            gUI.manualPlayPos = gComposition->GetCurrentPlayTime();
             ImGui::Text("Manual position:");
             ImGui::SliderFloat("##ManualPos", &gUI.manualPlayPos, 0.0f, gComposition->GetDuration());
-            if (!gComposition->IsPaused()) {
-                ImGui::PopItemFlag();
-                ImGui::PopStyleVar();
-            } else {
-                gComposition->SetCurrentPlayTime(gUI.manualPlayPos);
-            }
+            gComposition->SetCurrentPlayTime(gUI.manualPlayPos);
 
             if (ImGui::Button("Play")) {
                 gComposition->Play(gUI.manualPlayPos);
