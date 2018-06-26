@@ -53,6 +53,7 @@ public:
     void        Stop();
     void        SetLoop(const bool toLoop);
     bool        IsLooped() const;
+    bool        IsEndedPlay() const;
 
     void        Update(const float deltaTime);
     void        Draw(const DrawMode mode);

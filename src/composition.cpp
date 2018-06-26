@@ -212,6 +212,20 @@ bool Composition::IsLooped() const {
     return looped;
 }
 
+bool Composition::IsEndedPlay() const {
+    bool result = true;
+
+    if (mComposition) {
+        if (this->IsLooped()) {
+            result = false;
+        } else {
+            result = (!this->IsPlaying() && !this->IsPaused());
+        }
+    }
+
+    return result;
+}
+
 void Composition::Update(const float deltaTime) {
     if (mComposition) {
         ae_update_movie_composition(mComposition, deltaTime);

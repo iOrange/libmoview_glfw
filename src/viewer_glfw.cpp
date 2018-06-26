@@ -155,9 +155,6 @@ void DoUI() {
         if (!gLicenseHash.empty()) {
             memcpy(licenseHash, gLicenseHash.c_str(), gLicenseHash.length());
         }
-        if (!gCompositionName.empty()) {
-            memcpy(compositionName, gCompositionName.c_str(), gCompositionName.length());
-        }
 
         ImGui::Text("Movie file path:");
         ImGui::PushItemWidth(leftPanelWidth - 50.0f);
@@ -184,15 +181,6 @@ void DoUI() {
             }
         }
         ImGui::PopItemWidth();
-
-        ImGui::Text("Composition name:");
-        ImGui::PushItemWidth(leftPanelWidth - 50.0f);
-        {
-            if (ImGui::InputText("##CompositionName", compositionName, sizeof(compositionName) - 1)) {
-                gCompositionName = compositionName;
-            }
-        }
-        ImGui::PopItemWidth();
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Leave it empty to play default composition");
         }
@@ -206,6 +194,7 @@ void DoUI() {
     ImGui::End();
 
     if (openNewMovie && !gMovieFilePath.empty() && !gLicenseHash.empty()) {
+        gCompositionName.clear();
         ReloadMovie();
     }
 
@@ -267,10 +256,15 @@ void DoUI() {
 
             gUI.manualPlayPos = gComposition->GetCurrentPlayTime();
             ImGui::Text("Manual position:");
-            ImGui::SliderFloat("##ManualPos", &gUI.manualPlayPos, 0.0f, gComposition->GetDuration());
+            ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.92f);
+                ImGui::SliderFloat("##ManualPos", &gUI.manualPlayPos, 0.0f, gComposition->GetDuration());
+            ImGui::PopItemWidth();
             gComposition->SetCurrentPlayTime(gUI.manualPlayPos);
 
             if (ImGui::Button("Play")) {
+                if (gComposition->IsEndedPlay()) {
+                    gUI.manualPlayPos = 0.0f;
+                }
                 gComposition->Play(gUI.manualPlayPos);
             }
             ImGui::SameLine();
@@ -281,6 +275,11 @@ void DoUI() {
             ImGui::SameLine();
             if (ImGui::Button("Stop")) {
                 gComposition->Stop();
+                gUI.manualPlayPos = 0.0f;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Rewind")) {
+                gComposition->SetCurrentPlayTime(0.0f);
                 gUI.manualPlayPos = 0.0f;
             }
 
