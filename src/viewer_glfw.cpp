@@ -170,6 +170,7 @@ void DoUI() {
             if (NFD_OKAY == NFD_OpenDialog("aem", nullptr, &outPath)) {
                 gMovieFilePath = outPath;
                 free(outPath);
+                openNewMovie = true;
             }
         }
 
@@ -181,14 +182,6 @@ void DoUI() {
             }
         }
         ImGui::PopItemWidth();
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Leave it empty to play default composition");
-        }
-
-        ImGui::NewLine();
-        if (ImGui::Button("Play the movie !")) {
-            openNewMovie = true;
-        }
     }
     nextY += ImGui::GetWindowHeight();
     ImGui::End();
@@ -200,7 +193,7 @@ void DoUI() {
 
     // If we have more then 1 main composition - let's allow user to choose one to play
     const size_t numMainCompositions = gMovie.GetMainCompositionsCount();
-    if (numMainCompositions > 1) {
+    if (numMainCompositions > 0) {
         ImGui::SetNextWindowPos(ImVec2(0.0f, nextY));
         ImGui::SetNextWindowSize(ImVec2(leftPanelWidth, panelHeight));
         ImGui::Begin("Main compositions:", nullptr, kPanelFlags);
