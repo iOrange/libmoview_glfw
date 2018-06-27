@@ -19,6 +19,12 @@ inline FILE* my_fopen(const char* fileName, const char* mode) {
 #endif
 }
 
+#if _MSC_VER >= 1400
+#define my_sscanf sscanf_s
+#else
+#define my_sscanf sscanf
+#endif
+
 #define MyLog   std::cout
 #define MyEndl  std::endl
 

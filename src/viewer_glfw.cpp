@@ -51,6 +51,7 @@ bool            gToLoopPlay = false;
 Movie           gMovie;
 Composition*    gComposition = nullptr;
 size_t          gLastCompositionIdx = 0;
+float           gBackgroundColor[3] = { 0.412f, 0.796f, 1.0f };
 
 
 const char*     gSessionFileName = "session.txt";
@@ -62,6 +63,7 @@ void SaveSession() {
         fprintf(f, "%s\n", gCompositionName.c_str());
         fprintf(f, "%s\n", gToLoopPlay ? "yes" : "no");
         fprintf(f, "%s\n", gLicenseHash.c_str());
+        fprintf(f, "%f/%f/%f\n", gBackgroundColor[0], gBackgroundColor[1], gBackgroundColor[2]);
         fclose(f);
     }
 }
@@ -82,6 +84,14 @@ void LoadSession() {
         }
         if (fgets(line, 1024, f)) {
             gLicenseHash.assign(line, strlen(line) - 1);
+        }
+        if (fgets(line, 1024, f)) {
+            float temp[3] = { 0.0f };
+            if (3 == my_sscanf(line, "%f/%f/%f", &temp[0], &temp[1], &temp[2])) {
+                gBackgroundColor[0] = temp[0];
+                gBackgroundColor[1] = temp[1];
+                gBackgroundColor[2] = temp[2];
+            }
         }
 
         fclose(f);
@@ -228,6 +238,8 @@ void DoUI() {
         ImGui::Text("%.1f FPS (%.3f ms)", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
         ImGui::Checkbox("Draw normal", &gUI.showNormal);
         ImGui::Checkbox("Draw wireframe", &gUI.showWireframe);
+        ImGui::Text("Background color:");
+        ImGui::ColorEdit3("##BkgColor", gBackgroundColor);
     }
     nextY += ImGui::GetWindowHeight();
     ImGui::End();
@@ -393,7 +405,6 @@ int main(int argc, char** argv) {
     }
 
     glViewport(0, 0, static_cast<GLint>(kWindowWidth), static_cast<GLint>(kWindowHeight));
-    glClearColor(0.412f, 0.796f, 1.0f, 1.0f);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -402,6 +413,7 @@ int main(int argc, char** argv) {
     while (!glfwWindowShouldClose(window) && !gUI.shouldExit) {
         glfwPollEvents();
 
+        glClearColor(gBackgroundColor[0], gBackgroundColor[1], gBackgroundColor[2], 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         const float timeNow = GetCurrentTimeSeconds();
@@ -435,6 +447,11 @@ int main(int argc, char** argv) {
         ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
+    }
+
+    // save session on exit
+    if (!gMovieFilePath.empty() && !gLicenseHash.empty()) {
+        SaveSession();
     }
 
     ShutdownMovie();
