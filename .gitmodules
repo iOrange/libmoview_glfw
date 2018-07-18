@@ -10,3 +10,6 @@
 [submodule "libs/nativefiledialog"]
 	path = libs/nativefiledialog
 	url = https://github.com/mlabbe/nativefiledialog.git
+[submodule "libs/nuklear"]
+	path = libs/nuklear
+	url = https://github.com/vurtun/nuklear.git

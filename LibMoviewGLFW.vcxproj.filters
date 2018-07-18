@@ -42,6 +42,9 @@
     <Filter Include="libs\imgui">
       <UniqueIdentifier>{c5a2b26d-f0e0-40c3-93ef-293f98689233}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libs\nuklear">
+      <UniqueIdentifier>{e23b7089-81ee-49b3-b9fe-1c37ea668229}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="libs\libmovie\include\movie\movie.h">
@@ -103,6 +106,9 @@
     </ClInclude>
     <ClInclude Include="src\simplemath.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="libs\nuklear\nuklear.h">
+      <Filter>libs\nuklear</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

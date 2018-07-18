@@ -696,6 +696,8 @@ void Composition::FlushDraw() {
 
         GLint isPremultAlpha = GL_FALSE;
 
+        glEnable(GL_BLEND);
+
         switch (mCurrentBlendMode) {
             case BlendMode::Normal: {
                 if (mPremultipliedAlpha) {
@@ -733,6 +735,8 @@ void Composition::FlushDraw() {
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             glUseProgram(mWireShader);
             glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(mNumIndices), GL_UNSIGNED_SHORT, nullptr);
+
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
 
         mVerticesData = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);

@@ -96,7 +96,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)libs\libmovie\include\;$(ProjectDir)libs\glad\include\;$(ProjectDir)libs\glfw\include\;$(ProjectDir)libs\imgui\;$(ProjectDir)libs\stb\;$(ProjectDir)libs\nativefiledialog\src\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)libs\libmovie\include\;$(ProjectDir)libs\glad\include\;$(ProjectDir)libs\glfw\include\;$(ProjectDir)libs\imgui\;$(ProjectDir)libs\nuklear\;$(ProjectDir)libs\stb\;$(ProjectDir)libs\nativefiledialog\src\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -112,7 +112,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)libs\libmovie\include\;$(ProjectDir)libs\glad\include\;$(ProjectDir)libs\glfw\include\;$(ProjectDir)libs\imgui\;$(ProjectDir)libs\stb\;$(ProjectDir)libs\nativefiledialog\src\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)libs\libmovie\include\;$(ProjectDir)libs\glad\include\;$(ProjectDir)libs\glfw\include\;$(ProjectDir)libs\imgui\;$(ProjectDir)libs\nuklear\;$(ProjectDir)libs\stb\;$(ProjectDir)libs\nativefiledialog\src\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -130,7 +130,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)libs\libmovie\include\;$(ProjectDir)libs\glad\include\;$(ProjectDir)libs\glfw\include\;$(ProjectDir)libs\imgui\;$(ProjectDir)libs\stb\;$(ProjectDir)libs\nativefiledialog\src\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)libs\libmovie\include\;$(ProjectDir)libs\glad\include\;$(ProjectDir)libs\glfw\include\;$(ProjectDir)libs\imgui\;$(ProjectDir)libs\nuklear\;$(ProjectDir)libs\stb\;$(ProjectDir)libs\nativefiledialog\src\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -150,7 +150,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectDir)libs\libmovie\include\;$(ProjectDir)libs\glad\include\;$(ProjectDir)libs\glfw\include\;$(ProjectDir)libs\imgui\;$(ProjectDir)libs\stb\;$(ProjectDir)libs\nativefiledialog\src\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)libs\libmovie\include\;$(ProjectDir)libs\glad\include\;$(ProjectDir)libs\glfw\include\;$(ProjectDir)libs\imgui\;$(ProjectDir)libs\nuklear\;$(ProjectDir)libs\stb\;$(ProjectDir)libs\nativefiledialog\src\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -174,6 +174,7 @@
     <ClInclude Include="libs\libmovie\include\movie\movie_skeleton.h" />
     <ClInclude Include="libs\libmovie\include\movie\movie_type.h" />
     <ClInclude Include="libs\libmovie\include\movie\movie_typedef.h" />
+    <ClInclude Include="libs\nuklear\nuklear.h" />
     <ClInclude Include="libs\stb\stb_image.h" />
     <ClInclude Include="src\composition.h" />
     <ClInclude Include="src\imgui_impl_glfw_gl3_glad.h" />
