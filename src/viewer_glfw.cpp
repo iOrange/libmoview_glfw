@@ -20,7 +20,7 @@ extern "C" {
 
 #define UI_SYSTEM_IMGUI     1
 #define UI_SYSTEM_NUKLEAR   2
-#define UI_SYSTEM           UI_SYSTEM_NUKLEAR
+#define UI_SYSTEM           UI_SYSTEM_IMGUI
 
 #if (UI_SYSTEM == UI_SYSTEM_IMGUI)
 #include "imgui_impl_glfw_gl3_glad.h"
@@ -150,6 +150,68 @@ void ShutdownMovie() {
     ResourcesManager::Instance().Shutdown();
 }
 
+void CalcScaleToFitComposition() {
+    if (gComposition) {
+        const float wndWidth = static_cast<float>(kWindowWidth);
+        const float wndHeight = static_cast<float>(kWindowHeight);
+
+        // Now we need to scale and position our content so that it's centered and fits the screen
+        const float contentWidth = gComposition->GetWidth();
+        const float contentHeight = gComposition->GetHeight();
+
+        float scale = 1.0f;
+        if (contentWidth > wndWidth || contentHeight > wndHeight) {
+            // Content's size is bigger then the window, scaling needed
+            const float dW = contentWidth - wndWidth;
+            const float dH = contentHeight - wndHeight;
+
+            if (dW > dH) {
+                scale = wndWidth / contentWidth;
+            } else {
+                scale = wndHeight / contentHeight;
+            }
+        }
+
+        gComposition->SetContentScale(scale);
+    }
+}
+
+void CenterCompositionOnScreen() {
+    if (gComposition) {
+        const float wndWidth = static_cast<float>(kWindowWidth);
+        const float wndHeight = static_cast<float>(kWindowHeight);
+
+        const float contentWidth = gComposition->GetWidth();
+        const float contentHeight = gComposition->GetHeight();
+        const float contentScale = gComposition->GetContentScale();
+
+        const float offX = (wndWidth - (contentWidth * contentScale)) * 0.5f;
+        const float offY = (wndHeight - (contentHeight * contentScale)) * 0.5f;
+
+        gComposition->SetContentOffset(offX, offY);
+    }
+}
+
+void OnNewCompositionOpened() {
+    if (gComposition) {
+        const float wndWidth = static_cast<float>(kWindowWidth);
+        const float wndHeight = static_cast<float>(kWindowHeight);
+
+        gComposition->SetViewportSize(wndWidth, wndHeight);
+
+        gCompositionName = gComposition->GetName();
+        MyLog << "Composition \"" << gCompositionName << "\" loaded successfully" << MyEndl;
+        MyLog << " Duration: " << gComposition->GetDuration() << " seconds" << MyEndl;
+
+        gComposition->SetLoop(gToLoopPlay);
+        gComposition->Play();
+
+        // Now we need to scale and position our content so that it's centered and fits the screen
+        CalcScaleToFitComposition();
+        CenterCompositionOnScreen();
+    }
+}
+
 bool ReloadMovie() {
     bool result = false;
 
@@ -160,11 +222,7 @@ bool ReloadMovie() {
     if (gMovie.LoadFromFile(gMovieFilePath, gLicenseHash)) {
         gComposition = gCompositionName.empty() ? gMovie.OpenDefaultComposition() : gMovie.OpenComposition(gCompositionName);
         if (gComposition) {
-            gCompositionName = gComposition->GetName();
-            MyLog << "Composition \"" << gCompositionName << "\" loaded successfully" << MyEndl;
-            MyLog << " Duration: " << gComposition->GetDuration() << " seconds" << MyEndl;
-            gComposition->SetLoop(gToLoopPlay);
-            gComposition->Play();
+            OnNewCompositionOpened();
 
             SaveSession();
             gUI.manualPlayPos = 0.0f;
@@ -264,8 +322,7 @@ void DoUI() {
                 gLastCompositionIdx = static_cast<size_t>(option);
                 gMovie.CloseComposition(gComposition);
                 gComposition = gMovie.OpenMainCompositionByIdx(gLastCompositionIdx);
-                gComposition->SetLoop(gToLoopPlay);
-                gComposition->Play();
+                OnNewCompositionOpened();
                 gUI.manualPlayPos = 0.0f;
             }
         }
@@ -281,6 +338,17 @@ void DoUI() {
         ImGui::Text("%.1f FPS (%.3f ms)", ImGui::GetIO().Framerate, 1000.0f / ImGui::GetIO().Framerate);
         ImGui::Checkbox("Draw normal", &gUI.showNormal);
         ImGui::Checkbox("Draw wireframe", &gUI.showWireframe);
+        {
+            float contentScale = (gComposition == nullptr) ? 1.0f : gComposition->GetContentScale();
+            ImGui::Text("Content scale:");
+            ImGui::PushItemWidth(ImGui::GetWindowWidth() * 0.92f);
+            ImGui::SliderFloat("##ContentScale", &contentScale, 0.0f, 10.0f);
+            ImGui::PopItemWidth();
+            if (gComposition) {
+                gComposition->SetContentScale(contentScale);
+                CenterCompositionOnScreen();
+            }
+        }
         ImGui::Text("Background color:");
         ImGui::ColorEdit3("##BkgColor", gBackgroundColor);
     }
@@ -402,7 +470,7 @@ void DoUI() {
         gFpsCounter.fps = (gFpsCounter.accumulator > 0.0f) ? (1.0f / (gFpsCounter.accumulator / static_cast<float>(FpsCounter::kHistoryLen))) : FLT_MAX;
     }
 
-    const nk_flags kPanelFlags = NK_WINDOW_BORDER | NK_WINDOW_TITLE;
+    const nk_flags kPanelFlags = NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_MINIMIZABLE;
     const float kElementHeight = 22.0f;
     const float kLabelHeight = 16.0f;
 
@@ -459,8 +527,12 @@ void DoUI() {
             nk_edit_string(ctx, NK_EDIT_SIMPLE, licenseHash, &len, sizeof(licenseHash) - 1, nk_filter_default);
             gLicenseHash = licenseHash;
         }
-    } nk_end(ctx);
-    nextY += wndRect.h;
+
+        nextY += nk_window_get_height(ctx);
+    } else {
+        nextY += nk_window_get_content_region_min(ctx).y;
+    }
+    nk_end(ctx);
 
     if (openNewMovie && !gMovieFilePath.empty() && !gLicenseHash.empty()) {
         gCompositionName.clear();
@@ -487,15 +559,14 @@ void DoUI() {
                 gLastCompositionIdx = savedOption;
                 gMovie.CloseComposition(gComposition);
                 gComposition = gMovie.OpenMainCompositionByIdx(gLastCompositionIdx);
-                gComposition->SetLoop(gToLoopPlay);
-                gComposition->Play();
+                OnNewCompositionOpened();
                 gUI.manualPlayPos = 0.0f;
             }
         } nk_end(ctx);
     }
 
     nextY = 0.0f;
-    wndRect = nk_rect(static_cast<float>(kWindowWidth) - rightPanelWidth, nextY, rightPanelWidth, 230.0f);
+    wndRect = nk_rect(static_cast<float>(kWindowWidth) - rightPanelWidth, nextY, rightPanelWidth, 250.0f);
     if (nk_begin(ctx, "Viewer:", wndRect, kPanelFlags)) {
         nk_layout_row_dynamic(ctx, kLabelHeight, 1);
         nk_labelf(ctx, NK_TEXT_LEFT, "%.1f FPS (%.3f ms)", gFpsCounter.fps, 1000.0f / gFpsCounter.fps);
@@ -512,6 +583,17 @@ void DoUI() {
             gUI.showWireframe = (check == nk_true);
         }
 
+        {
+            float contentScale = (gComposition == nullptr) ? 1.0f : gComposition->GetContentScale();
+            nk_layout_row_dynamic(ctx, kLabelHeight, 1);
+            nk_labelf(ctx, NK_TEXT_LEFT, "Content scale: %0.4f", contentScale);
+            nk_slider_float(ctx, 0.1f, &contentScale, 10.0f, 0.005f);
+            if (gComposition) {
+                gComposition->SetContentScale(contentScale);
+                CenterCompositionOnScreen();
+            }
+        }
+
         nk_layout_row_dynamic(ctx, kLabelHeight, 1);
         nk_label(ctx, "Background color:", NK_TEXT_LEFT);
         {
@@ -521,15 +603,18 @@ void DoUI() {
             color.b = gBackgroundColor[2];
             color.a = 1.0f;
 
-            nk_layout_row_static(ctx, kElementHeight * 4, rightPanelWidth - 50.0f, 1);
+            nk_layout_row_static(ctx, kElementHeight * 3.5f, static_cast<int>(rightPanelWidth - 50.0f), 1);
             if (nk_color_pick(ctx, &color, NK_RGB)) {
                 gBackgroundColor[0] = color.r;
                 gBackgroundColor[1] = color.g;
                 gBackgroundColor[2] = color.b;
             }
         }
-    } nk_end(ctx);
-    nextY += wndRect.h;
+        nextY += nk_window_get_height(ctx);
+    } else {
+        nextY += nk_window_get_content_region_min(ctx).y;
+    }
+    nk_end(ctx);
 
     if (gComposition) {
         wndRect = nk_rect(static_cast<float>(kWindowWidth) - rightPanelWidth, nextY, rightPanelWidth, 210.0f);
@@ -587,8 +672,11 @@ void DoUI() {
                     gComposition->SetLoop(gToLoopPlay);
                 }
             }
-        } nk_end(ctx);
-        nextY += wndRect.h;
+            nextY += nk_window_get_height(ctx);
+        } else {
+            nextY += nk_window_get_content_region_min(ctx).y;
+        }
+        nk_end(ctx);
 
         const size_t numSubCompositions = gComposition->GetNumSubCompositions();
         if (numSubCompositions) {
@@ -626,7 +714,8 @@ void DoUI() {
                         }
                     }
                 }
-            } nk_end(ctx);
+            }
+            nk_end(ctx);
         }
     }
 #else

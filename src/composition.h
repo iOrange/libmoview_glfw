@@ -41,6 +41,14 @@ protected:
 public:
     ~Composition();
 
+    void        SetViewportSize(const float width, const float height);
+    void        SetContentScale(const float scale);
+    float       GetContentScale() const;
+    void        SetContentOffset(const float offX, const float offY);
+
+    float       GetWidth() const;
+    float       GetHeight() const;
+
     std::string GetName() const;
     float       GetDuration() const;
     float       GetCurrentPlayTime() const;
@@ -110,4 +118,9 @@ private:
     void*                                       mIndicesData;
 
     DrawMode                                    mDrawMode;
+    float                                       mViewportWidth;
+    float                                       mViewportHeight;
+    float                                       mContentScale;
+    float                                       mContentOffX;
+    float                                       mContentOffY;
 };
